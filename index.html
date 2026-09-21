@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Typo</title>
+  <meta name="description" content="A notes app for macOS. One continuous canvas per note, saved as plain markdown in a folder you choose, synced by git.">
+  <link rel="icon" href="typo.svg">
+<style>
+  /* The app's own faces, bundled beside the page for the same reason the app
+     bundles them: the page should look the same on a machine that has never
+     seen the font. Only the two weights the page asks for. */
+  @font-face {
+    font-family: MaruBuri;
+    src: url("fonts/MaruBuri-Regular.woff2") format("woff2");
+    font-weight: 400;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: MaruBuri;
+    src: url("fonts/MaruBuri-Bold.woff2") format("woff2");
+    font-weight: 700;
+    font-display: swap;
+  }
+
+  /* Paper and ink, taken verbatim from the app. There is no accent: "live" is
+     said by weight, and the only colour that ever appears means "does not come
+     back", which a page like this never needs to say. */
+  :root {
+    color-scheme: light;
+    --bg: #fcfcfb;
+    --bg-sunken: #f4f4f2;
+    --border: #eaeae7;
+    --border-strong: #cfcfc9;
+    --text: #141413;
+    --text-dim: #83827d;
+    --ink-soft: rgb(20 20 19 / 0.1);
+    --selection: rgb(20 20 19 / 0.18);
+    --shadow: 0 2px 6px rgb(0 0 0 / 0.11);
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #151515;
+      --bg-sunken: #101010;
+      --border: #2f2f2f;
+      --border-strong: #454541;
+      --text: #e8e8e6;
+      --text-dim: #8a8a85;
+      --ink-soft: rgb(232 232 230 / 0.1);
+      --selection: rgb(232 232 230 / 0.2);
+      --shadow: 0 2px 6px rgb(0 0 0 / 0.45);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #151515;
+    --bg-sunken: #101010;
+    --border: #2f2f2f;
+    --border-strong: #454541;
+    --text: #e8e8e6;
+    --text-dim: #8a8a85;
+    --ink-soft: rgb(232 232 230 / 0.1);
+    --selection: rgb(232 232 230 / 0.2);
+    --shadow: 0 2px 6px rgb(0 0 0 / 0.45);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: MaruBuri, "Apple SD Gothic Neo", Georgia, serif;
+    font-size: 17px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::selection { background: var(--selection); }
+  a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 0.18em; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
+
+  /* One narrow column, set like a page rather than a site. Every section is a
+     ruled block: hairline above, air, content. */
+  .page {
+    max-width: 46rem;
+    margin: 0 auto;
+    padding-block: 2.5rem 4rem;
+    padding-inline: clamp(16px, 5vw, 40px);
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  .wordmark {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: 0.01em;
+  }
+  .wordmark svg { width: 22px; height: 22px; }
+  .header-links {
+    display: flex;
+    gap: 1.4rem;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+  }
+  .header-links a { text-decoration: none; }
+  .header-links a:hover { color: var(--text); }
+  /* One button that cycles, as in the app: the label names where the next
+     press goes, since a cycle can't be read without stepping into it. */
+  .theme {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+  }
+  .theme:hover { color: var(--text); }
+
+  .hero { padding-block: 5rem 3rem; }
+  .hero h1 {
+    margin: 0 0 1.2rem;
+    font-size: clamp(2.1rem, 6vw, 3.4rem);
+    line-height: 1.15;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    max-width: 16ch;
+  }
+  .hero p {
+    margin: 0;
+    max-width: 34rem;
+    font-size: 1.1rem;
+    color: var(--text-dim);
+  }
+  .hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.2rem;
+    margin-top: 2.2rem;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.7rem 1.3rem;
+    background: var(--text);
+    color: var(--bg);
+    font: inherit;
+    font-weight: 700;
+    text-decoration: none;
+    border: 1px solid var(--text);
+    transition: opacity 0.12s ease;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn-note { font-size: 0.85rem; color: var(--text-dim); }
+
+  /* The app, drawn rather than photographed, so it renders in both themes with
+     the page's own tokens. Every line is a hairline and every corner is square,
+     which is how the app itself is set. */
+  .window {
+    margin-top: 3.5rem;
+    border: 1px solid var(--border-strong);
+    box-shadow: var(--shadow);
+    background: var(--bg);
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    min-height: 420px;
+    font-size: 0.8rem;
+    line-height: 1.5;
+    overflow: hidden;
+    user-select: none;
+  }
+  .sidebar {
+    border-right: 1px solid var(--border-strong);
+    display: flex;
+    flex-direction: column;
+    padding-top: 2rem;
+  }
+  .sidebar .search {
+    margin: 0 0.9rem 0.6rem;
+    padding: 0.3rem 0.15rem;
+    border-bottom: 1px solid var(--border-strong);
+    color: var(--text-dim);
+    font-size: 0.72rem;
+  }
+  .row {
+    position: relative;
+    padding: 0.38rem 0.9rem;
+    color: var(--text-dim);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .row.active { color: var(--text); font-weight: 700; }
+  .row.active::after {
+    content: "";
+    position: absolute;
+    left: 0.9rem;
+    right: 0.9rem;
+    bottom: 0;
+    height: 1px;
+    background: var(--text);
+  }
+  .sidebar-foot {
+    margin-top: auto;
+    padding: 0.6rem 0.9rem 0.8rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+  .sidebar-foot svg { width: 12px; height: 12px; }
+  .canvas {
+    padding: 2.6rem clamp(1.2rem, 5%, 3rem) 2rem;
+    max-width: 34rem;
+  }
+  .canvas .title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin: 0 0 1rem;
+  }
+  .canvas p { margin: 0 0 0.7rem; }
+  .canvas h3 {
+    font-size: 0.95rem;
+    margin: 1rem 0 0.4rem;
+  }
+  .canvas .rule {
+    height: 1px;
+    background: var(--border-strong);
+    margin: 1rem 0;
+  }
+  .todo {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin: 0.2rem 0;
+  }
+  .box {
+    flex: none;
+    width: 11px;
+    height: 11px;
+    border: 1px solid var(--border-strong);
+    position: relative;
+    top: 1px;
+  }
+  .box.done { background: var(--text); border-color: var(--text); }
+  .box.done::after {
+    content: "";
+    position: absolute;
+    inset: 1px;
+    background: var(--bg);
+    -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10'%3E%3Cpath d='M1.7 5.2 L4.6 8.1 L10.3 1.8' fill='none' stroke='black' stroke-width='2' stroke-linecap='square' stroke-linejoin='miter'/%3E%3C/svg%3E") center / contain no-repeat;
+    mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10'%3E%3Cpath d='M1.7 5.2 L4.6 8.1 L10.3 1.8' fill='none' stroke='black' stroke-width='2' stroke-linecap='square' stroke-linejoin='miter'/%3E%3C/svg%3E") center / contain no-repeat;
+  }
+  .todo.done { color: var(--text-dim); text-decoration: line-through; }
+  .caret {
+    display: inline-block;
+    width: 1px;
+    height: 1em;
+    background: var(--text);
+    vertical-align: -0.15em;
+    margin-left: 1px;
+    animation: blink 1.1s steps(1) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+  @media (prefers-reduced-motion: reduce) { .caret { animation: none; } }
+
+  section { padding-block: 3.5rem; border-top: 1px solid var(--border-strong); }
+  .eyebrow {
+    margin: 0 0 0.6rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+  }
+  section h2 {
+    margin: 0 0 1.6rem;
+    font-size: 1.7rem;
+    line-height: 1.2;
+    font-weight: 700;
+    text-wrap: balance;
+  }
+  section > p { max-width: 36rem; margin: 0 0 1rem; }
+
+  /* Principles as a ruled list, not cards: a term on the left, its sentence on
+     the right, one hairline between each pair. */
+  .principles {
+    margin: 0;
+    display: grid;
+    grid-template-columns: 11rem 1fr;
+  }
+  .principles > div {
+    display: contents;
+  }
+  .principles dt, .principles dd {
+    margin: 0;
+    padding-block: 1rem;
+    border-top: 1px solid var(--border);
+  }
+  .principles dt { font-weight: 700; padding-right: 1.5rem; }
+  .principles dd { color: var(--text-dim); max-width: 32rem; }
+  .principles dd strong { color: var(--text); font-weight: 400; }
+  .principles > div:last-child dt,
+  .principles > div:last-child dd { border-bottom: 1px solid var(--border); }
+
+  /* A real file from a vault: front-matter, body, and the width folded into
+     the image URL. It is what the reader will find in the folder, so it is
+     shown exactly. */
+  .file {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: start;
+  }
+  .file pre {
+    margin: 0;
+    padding: 1rem 1.1rem;
+    background: var(--bg-sunken);
+    border: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    line-height: 1.55;
+    overflow-x: auto;
+    color: var(--text);
+  }
+  .file pre .dim { color: var(--text-dim); }
+  .file-notes { font-size: 0.95rem; color: var(--text-dim); }
+  .file-notes p { margin: 0 0 0.9rem; }
+  .file-notes strong { color: var(--text); font-weight: 400; }
+  .file-notes code {
+    font-family: var(--mono);
+    font-size: 0.85em;
+    background: var(--ink-soft);
+    padding: 0.05em 0.3em;
+  }
+
+  /* The mark at the size the story is about, then at the sizes it is actually
+     seen. The large one sits on the same sunken tile as the file, so the two
+     exhibits read as one kind of thing. */
+  .mark { display: flex; flex-direction: column; gap: 1rem; }
+  .mark-tile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    aspect-ratio: 1;
+    max-width: 18rem;
+    background: var(--bg-sunken);
+    border: 1px solid var(--border);
+  }
+  .mark-tile svg { width: 58%; height: 58%; }
+  .mark-sizes {
+    display: flex;
+    align-items: flex-end;
+    gap: 1.4rem;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+  }
+  .mark-sizes > div { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+
+  .steps {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    counter-reset: step;
+    max-width: 36rem;
+  }
+  .steps li {
+    counter-increment: step;
+    display: grid;
+    grid-template-columns: 2rem minmax(0, 1fr);
+    gap: 0.5rem;
+    padding-block: 0.8rem;
+    border-top: 1px solid var(--border);
+  }
+  .steps li:last-child { border-bottom: 1px solid var(--border); }
+  .steps li::before {
+    content: counter(step);
+    color: var(--text-dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .steps code { font-family: var(--mono); font-size: 0.85em; }
+
+  .download {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.2rem 2rem;
+    margin-top: 1.6rem;
+  }
+  .download-meta {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    display: grid;
+    gap: 0.15rem;
+  }
+  .gatekeeper {
+    margin-top: 1.6rem;
+    padding: 0.9rem 1.1rem;
+    border-left: 2px solid var(--text);
+    font-size: 0.92rem;
+    max-width: 36rem;
+  }
+  .gatekeeper p { margin: 0; }
+
+  footer {
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-strong);
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.6rem 2rem;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+  }
+  footer a { text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  @media (max-width: 640px) {
+    .window { grid-template-columns: 1fr; min-height: 0; }
+    .sidebar { border-right: 0; border-bottom: 1px solid var(--border-strong); padding-top: 0.8rem; }
+    .sidebar-foot { display: none; }
+    .canvas { padding-top: 1.4rem; }
+    .principles { grid-template-columns: 1fr; }
+    .principles dt { padding-bottom: 0.15rem; }
+    .principles dd { border-top: 0; padding-top: 0; }
+    .principles > div:last-child dt { border-bottom: 0; }
+    .file { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <header>
+    <a class="wordmark" href="#" aria-label="Typo">
+      <!-- Eight keys of a typewriter, three, three and two. Rows sit tighter
+           than columns so it reads as a keyboard rather than a grid. -->
+      <svg viewBox="311.45 315.45 401.1 401.1" fill="currentColor" aria-hidden="true">
+        <circle cx="354.75" cy="382.45" r="43.3"/><circle cx="512" cy="382.45" r="43.3"/><circle cx="669.25" cy="382.45" r="43.3"/>
+        <circle cx="354.75" cy="516" r="43.3"/><circle cx="512" cy="516" r="43.3"/><circle cx="669.25" cy="516" r="43.3"/>
+        <circle cx="433.375" cy="649.55" r="43.3"/><circle cx="590.625" cy="649.55" r="43.3"/>
+      </svg>
+      Typo
+    </a>
+    <nav class="header-links">
+      <a href="#how">How it works</a>
+      <a href="#file">The file</a>
+      <a href="#name">The name</a>
+      <a href="#download">Download</a>
+      <button class="theme" id="theme" type="button" aria-label="Switch theme">Light</button>
+    </nav>
+  </header>
+
+  <div class="hero">
+    <h1>One page you keep writing on.</h1>
+    <p>A notes app for macOS with no folders, no databases and no account. Each note is one continuous canvas, saved as a markdown file in a folder you choose, and synced by that folder being a git repo.</p>
+    <div class="hero-actions">
+      <a class="btn" href="https://github.com/hyeung-jun/typo-releases/releases/latest">Download for macOS</a>
+      <span class="btn-note">Free. Your notes stay in your folder.</span>
+    </div>
+
+    <div class="window" aria-label="The Typo window, drawn">
+      <div class="sidebar">
+        <div class="search">Search</div>
+        <div class="row active">Week 38</div>
+        <div class="row">Reading notes</div>
+        <div class="row">Ideas for the garden</div>
+        <div class="row">Recipes I actually make</div>
+        <div class="row">Talk outline</div>
+        <div class="sidebar-foot">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><circle cx="4" cy="4" r="2"/><circle cx="12" cy="12" r="2"/><path d="M4 6v3a3 3 0 0 0 3 3h3"/></svg>
+          Synced 2 min ago
+        </div>
+      </div>
+      <div class="canvas">
+        <div class="title">Week 38</div>
+        <p>Monday. The keyboard tray finally arrived, so the desk is at the right height for the first time since the move.</p>
+        <h3>Things to close out</h3>
+        <div class="todo done"><span class="box done"></span>Send the revised outline</div>
+        <div class="todo"><span class="box"></span>Reply about the workshop dates</div>
+        <div class="todo"><span class="box"></span>Book the dentist</div>
+        <div class="rule"></div>
+        <p>Thursday. Rereading the chapter on scaffolds. The useful idea is that a draft is a structure you take down later, not one you live in<span class="caret"></span></p>
+      </div>
+    </div>
+  </div>
+
+  <section id="how">
+    <p class="eyebrow">How it works</p>
+    <h2>Less structure to maintain, more time typing.</h2>
+    <dl class="principles">
+      <div>
+        <dt>One canvas per note</dt>
+        <dd>There are no sections and no nested pages. A note is a single surface you scroll and keep adding to. <strong>Headings become an outline in the margin</strong> when you want to jump, and stay out of the way when you don't.</dd>
+      </div>
+      <div>
+        <dt>Plain markdown files</dt>
+        <dd>Every note is a <strong>.md file in a folder you picked</strong>. Open it in any other editor, grep it, back it up however you already do. Pasted images sit next to it in an assets folder.</dd>
+      </div>
+      <div>
+        <dt>Git is the sync</dt>
+        <dd>Point the folder at a remote and Typo commits and pulls for you, <strong>using the git and credentials already on your machine</strong>. No server of ours, no account, nothing to trust but your own repo.</dd>
+      </div>
+      <div>
+        <dt>Blocks, not a form</dt>
+        <dd>Type <strong>/</strong> for headings, lists, checkboxes, quotes and tables. Drag blocks to reorder them, paste an image and drag its corner to resize. Nothing that markdown can't hold is in the menu.</dd>
+      </div>
+      <div>
+        <dt>Paper and ink</dt>
+        <dd>Two themes, light and dark, with no accent colour in either. What is active is <strong>darker or heavier, never bluer</strong>. Set in MaruBuri, a serif drawn for reading.</dd>
+      </div>
+    </dl>
+  </section>
+
+  <section id="file">
+    <p class="eyebrow">The file</p>
+    <h2>What ends up on disk.</h2>
+    <div class="file">
+<pre><span class="dim">---</span>
+<span class="dim">title:</span> Week 38
+<span class="dim">---</span>
+
+Monday. The keyboard tray finally arrived,
+so the desk is at the right height for the
+first time since the move.
+
+### Things to close out
+
+- [x] Send the revised outline
+- [ ] Reply about the workshop dates
+- [ ] Book the dentist
+
+---
+
+![desk](assets/6f1c2a9e-4b1d.jpg?w=320)</pre>
+      <div class="file-notes">
+        <p><strong>The title lives in the front-matter,</strong> not the filename. Renaming a note is an edit to its content, so git sees one change rather than a delete and a create.</p>
+        <p><strong>The filename is a UUID.</strong> It never changes and never contains a space, which is also why image names are UUIDs: a markdown image URL ends at the first space.</p>
+        <p><strong>An image's width rides along as <code>?w=320</code>.</strong> Markdown has no way to say how wide a picture is, so the resize is folded into the URL and unfolded on read. Any other viewer just ignores it.</p>
+        <p><strong>Hand-arranged order is a file too</strong>, <code>.typo-order</code>, kept in the vault so it travels with the notes.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="name">
+    <p class="eyebrow">The name and the mark</p>
+    <h2>Named after the typewriter, for the typing.</h2>
+    <div class="file">
+      <div class="mark">
+        <div class="mark-tile" aria-label="The Typo mark: eight keys in rows of three, three and two">
+          <svg viewBox="311.45 315.45 401.1 401.1" fill="currentColor" aria-hidden="true">
+            <circle cx="354.75" cy="382.45" r="43.3"/><circle cx="512" cy="382.45" r="43.3"/><circle cx="669.25" cy="382.45" r="43.3"/>
+            <circle cx="354.75" cy="516" r="43.3"/><circle cx="512" cy="516" r="43.3"/><circle cx="669.25" cy="516" r="43.3"/>
+            <circle cx="433.375" cy="649.55" r="43.3"/><circle cx="590.625" cy="649.55" r="43.3"/>
+          </svg>
+        </div>
+        <div class="mark-sizes" aria-hidden="true">
+          <div><svg viewBox="311.45 315.45 401.1 401.1" fill="currentColor" aria-hidden="true" width="64" height="64">
+            <circle cx="354.75" cy="382.45" r="43.3"/><circle cx="512" cy="382.45" r="43.3"/><circle cx="669.25" cy="382.45" r="43.3"/>
+            <circle cx="354.75" cy="516" r="43.3"/><circle cx="512" cy="516" r="43.3"/><circle cx="669.25" cy="516" r="43.3"/>
+            <circle cx="433.375" cy="649.55" r="43.3"/><circle cx="590.625" cy="649.55" r="43.3"/>
+          </svg><span>64 px</span></div>
+          <div><svg viewBox="311.45 315.45 401.1 401.1" fill="currentColor" aria-hidden="true" width="32" height="32">
+            <circle cx="354.75" cy="382.45" r="43.3"/><circle cx="512" cy="382.45" r="43.3"/><circle cx="669.25" cy="382.45" r="43.3"/>
+            <circle cx="354.75" cy="516" r="43.3"/><circle cx="512" cy="516" r="43.3"/><circle cx="669.25" cy="516" r="43.3"/>
+            <circle cx="433.375" cy="649.55" r="43.3"/><circle cx="590.625" cy="649.55" r="43.3"/>
+          </svg><span>32 px</span></div>
+          <div><svg viewBox="311.45 315.45 401.1 401.1" fill="currentColor" aria-hidden="true" width="22" height="22">
+            <circle cx="354.75" cy="382.45" r="43.3"/><circle cx="512" cy="382.45" r="43.3"/><circle cx="669.25" cy="382.45" r="43.3"/>
+            <circle cx="354.75" cy="516" r="43.3"/><circle cx="512" cy="516" r="43.3"/><circle cx="669.25" cy="516" r="43.3"/>
+            <circle cx="433.375" cy="649.55" r="43.3"/><circle cx="590.625" cy="649.55" r="43.3"/>
+          </svg><span>22 px</span></div>
+        </div>
+      </div>
+      <div class="file-notes">
+        <p><strong>Typo is the front of <em>typewriter</em>,</strong> and what it points at is typing. It was not chosen for a meaning. It was chosen for being short, and a little cute, and easy to say.</p>
+        <p><strong>It does not mean a mistake.</strong> The dictionary gives that sense first, and at one point it nearly decided something: a proposal to knock one key out of line, so the icon would say "typo" too. It was dropped, because the name is about the act, not the error. Everything else in the app leans the same way. One page with no folders to file into, a title kept out of the filename, a menu with nothing markdown can't hold. The less structure there is to maintain, the more of what is left is typing.</p>
+        <p><strong>The mark is a typewriter reduced to its keys.</strong> Eight discs in three rows: three, three and two. A whole typewriter drawn small is a silhouette of carriage and platen that collapses into a lump at icon sizes. The keys are the part a writer touches, and they are the part that survives being shrunk.</p>
+        <p><strong>The rows sit tighter than the columns,</strong> about 0.85 of the pitch, and that ratio is the whole drawing. Square it up and it stops being a keyboard and becomes a keypad, a dice face, a drag handle. The bottom pair is offset by exactly half a column, the way a machine's keys stagger and a grid's cells do not. That taper also gives the mark a bottom edge, and so a way up.</p>
+        <p><strong>It replaced a woodpile.</strong> The app was once called Firewood, and its mark was three split logs whose grain and rings ate each other below 64 pixels. Discs have no inside to lose, so eight of them still read as eight at 32. There is one colour, ink on paper, with no accent. In the app an accent marks what is active, and an icon is never active.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="download">
+    <p class="eyebrow">Download</p>
+    <h2>Get Typo for macOS.</h2>
+    <div class="download">
+      <a class="btn" href="https://github.com/hyeung-jun/typo-releases/releases/latest">Download Typo.dmg</a>
+      <div class="download-meta">
+        <span>Version 0.1.2 · Apple silicon</span>
+        <span>macOS 13 or later · about 5 MB</span>
+      </div>
+    </div>
+    <div class="gatekeeper">
+      <p>Typo is not yet signed with an Apple Developer ID, so macOS refuses the first launch. Open it once anyway: after the refusal, go to <strong>System Settings → Privacy &amp; Security</strong>, scroll to the bottom and click <strong>Open Anyway</strong>. On macOS 14 and earlier, right-click the app and choose Open instead. After that it launches normally.</p>
+    </div>
+    <ol class="steps" style="margin-top:1.6rem">
+      <li><span>Open the .dmg and drag <strong>Typo</strong> into Applications.</span></li>
+      <li><span>Launch it and pick a folder. An empty one is fine, and so is a folder that already holds markdown.</span></li>
+      <li><span>To sync, run <code>git init</code> in that folder or let Typo do it, then paste a remote URL in the sidebar. Your existing SSH key or credential helper does the rest.</span></li>
+    </ol>
+  </section>
+
+  <footer>
+    <span>Typo · a notes app named after the typewriter, for the typing.</span>
+    <span><a href="https://github.com/hyeung-jun/typo-releases/releases">Changelog</a></span>
+  </footer>
+</div>
+
+<script>
+  (function () {
+    var order = ["auto", "light", "dark"];
+    var next = { auto: "Light", light: "Dark", dark: "Auto" };
+    var root = document.documentElement;
+    var button = document.getElementById("theme");
+    var current = "auto";
+    try { current = localStorage.getItem("typo-theme") || "auto"; } catch (e) {}
+    if (order.indexOf(current) < 0) current = "auto";
+
+    function apply() {
+      if (current === "auto") root.removeAttribute("data-theme");
+      else root.setAttribute("data-theme", current);
+      button.textContent = next[current];
+    }
+    button.addEventListener("click", function () {
+      current = order[(order.indexOf(current) + 1) % order.length];
+      try { localStorage.setItem("typo-theme", current); } catch (e) {}
+      apply();
+    });
+    apply();
+  })();
+</script>
+</body>
+</html>
