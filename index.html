@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Typo</title>
-  <meta name="description" content="A notes app for macOS. One continuous canvas per note, saved as plain markdown in a folder you choose, synced by git.">
+  <meta name="description" content="A notes app for macOS and Windows. One continuous canvas per note, saved as plain markdown in a folder you choose, synced by git.">
   <link rel="icon" href="typo.svg">
 <style>
   /* The app's own faces, bundled beside the page for the same reason the app
@@ -161,6 +161,9 @@
     transition: opacity 0.12s ease;
   }
   .btn:hover { opacity: 0.85; }
+  /* The second platform in outline, so the row still has one thing to press
+     first; the ink is the same, only the fill is withheld. */
+  .btn-quiet { background: none; color: var(--text); }
   .btn-note { font-size: 0.85rem; color: var(--text-dim); }
 
   /* The app, drawn rather than photographed, so it renders in both themes with
@@ -464,9 +467,10 @@
 
   <div class="hero">
     <h1>One page you keep writing on.</h1>
-    <p>A notes app for macOS with no folders, no databases and no account. Each note is one continuous canvas, saved as a markdown file in a folder you choose, and synced by that folder being a git repo.</p>
+    <p>A notes app for macOS and Windows with no folders, no databases and no account. Each note is one continuous canvas, saved as a markdown file in a folder you choose, and synced by that folder being a git repo.</p>
     <div class="hero-actions">
       <a class="btn" href="https://github.com/hyeung-jun/typo-releases/releases/latest">Download for macOS</a>
+      <a class="btn btn-quiet" href="https://github.com/hyeung-jun/typo-releases/releases/latest">Download for Windows</a>
       <span class="btn-note">Free. Your notes stay in your folder.</span>
     </div>
 
@@ -595,7 +599,7 @@ first time since the move.
 
   <section id="download">
     <p class="eyebrow">Download</p>
-    <h2>Get Typo for macOS.</h2>
+    <h2>Get Typo for macOS or Windows.</h2>
     <div class="download">
       <a class="btn" href="https://github.com/hyeung-jun/typo-releases/releases/latest">Download Typo.dmg</a>
       <div class="download-meta">
@@ -603,13 +607,20 @@ first time since the move.
         <span>macOS 13 or later · about 5 MB</span>
       </div>
     </div>
+    <div class="download">
+      <a class="btn" href="https://github.com/hyeung-jun/typo-releases/releases/latest">Download Typo.msi</a>
+      <div class="download-meta">
+        <span>Version 0.1.2 · 64-bit</span>
+        <span>Windows 10 or later · about 16 MB</span>
+      </div>
+    </div>
     <div class="gatekeeper">
-      <p>Typo is not yet signed with an Apple Developer ID, so macOS refuses the first launch. Open it once anyway: after the refusal, go to <strong>System Settings → Privacy &amp; Security</strong>, scroll to the bottom and click <strong>Open Anyway</strong>. On macOS 14 and earlier, right-click the app and choose Open instead. After that it launches normally.</p>
+      <p>Typo is not yet signed, so both systems stop it the first time. On macOS, after the refusal go to <strong>System Settings → Privacy &amp; Security</strong>, scroll to the bottom and click <strong>Open Anyway</strong> (on macOS 14 and earlier, right-click the app and choose Open instead). On Windows, when SmartScreen stops the installer, click <strong>More info</strong>, then <strong>Run anyway</strong>. After that it launches normally.</p>
     </div>
     <ol class="steps" style="margin-top:1.6rem">
-      <li><span>Open the .dmg and drag <strong>Typo</strong> into Applications.</span></li>
+      <li><span>On macOS, open the .dmg and drag <strong>Typo</strong> into Applications. On Windows, run the .msi.</span></li>
       <li><span>Launch it and pick a folder. An empty one is fine, and so is a folder that already holds markdown.</span></li>
-      <li><span>To sync, run <code>git init</code> in that folder or let Typo do it, then paste a remote URL in the sidebar. Your existing SSH key or credential helper does the rest.</span></li>
+      <li><span>To sync, run <code>git init</code> in that folder or let Typo do it, then paste a remote URL in the sidebar. Your existing SSH key or credential helper does the rest. Windows has no git of its own, so install <a href="https://git-scm.com/download/win">Git for Windows</a> first.</span></li>
     </ol>
   </section>
 
