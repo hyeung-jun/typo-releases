@@ -426,7 +426,7 @@
     color: var(--text-dim);
     font-variant-numeric: tabular-nums;
   }
-  .steps code { font-family: var(--mono); font-size: 0.85em; }
+  .steps code, .gatekeeper code { font-family: var(--mono); font-size: 0.85em; }
 
   .download {
     display: flex;
@@ -654,8 +654,25 @@ first time since the move.
     <ol class="steps" style="margin-top:1.6rem">
       <li><span>On macOS, open the .dmg and drag <strong>Typo</strong> into Applications. On Windows, run the .msi.</span></li>
       <li><span>Launch it and pick a folder. An empty one is fine, and so is a folder that already holds markdown.</span></li>
-      <li><span>To sync, run <code>git init</code> in that folder or let Typo do it, then paste a remote URL in the sidebar. Your existing SSH key or credential helper does the rest. Windows has no git of its own, so install <a href="https://git-scm.com/download/win">Git for Windows</a> first.</span></li>
+      <li><span>That is all it takes to write. To keep the notes on more than one computer, <a href="#sync">set up sync</a>.</span></li>
     </ol>
+  </section>
+
+  <section id="sync">
+    <p class="eyebrow">Sync</p>
+    <h2>Keep your notes on every computer.</h2>
+    <p>Typo syncs through a private GitHub repository that only you can see. It uses the git program on your computer and the GitHub sign-in you give it once, so Typo never asks for or keeps a password. The setup is a few minutes in the Terminal (Command Prompt on Windows), once per computer.</p>
+    <ol class="steps">
+      <li><span><strong>Install git.</strong> On macOS, open Terminal and run <code>xcode-select --install</code>, then click Install in the window that appears. On Windows, install <a href="https://git-scm.com/download/win">Git for Windows</a> with its default options.</span></li>
+      <li><span><strong>Install the GitHub CLI</strong> from <a href="https://cli.github.com">cli.github.com</a>. This is the small tool that signs your computer in to GitHub.</span></li>
+      <li><span><strong>Sign in once.</strong> Run <code>gh auth login</code> and answer GitHub.com, HTTPS, Yes, and Login with a web browser. Copy the code it shows, press Enter, and approve it in the browser. Then run <code>gh auth setup-git</code>. Restart Typo afterwards.</span></li>
+      <li><span><strong>Make a repository</strong> at <a href="https://github.com/new">github.com/new</a>. Give it any name, choose <strong>Private</strong>, and leave "Add a README" off, since any markdown in it would show up as a note. Copy its address, which looks like <code>https://github.com/you/notes.git</code>.</span></li>
+      <li><span><strong>Connect it in Typo.</strong> At the bottom of the sidebar, click <strong>Set up git sync</strong>, then the git icon beside the folder name. Paste the address and click <strong>Connect</strong>. From then on Typo commits and syncs by itself.</span></li>
+      <li><span><strong>On another computer,</strong> do steps 1 to 3, pick an empty folder in Typo, and connect the same address. Your notes arrive with the first sync.</span></li>
+    </ol>
+    <div class="gatekeeper">
+      <p>If Typo says <strong>this machine has no credentials for the remote</strong>, step 3 has not been done on this computer yet. If it says <strong>there is no repo at that address</strong>, check the address, and that you signed in with the account that owns the repository. Already use git with an SSH key? A <code>git@github.com:you/notes.git</code> address works too, and steps 2 and 3 can be skipped.</p>
+    </div>
   </section>
 
   <footer>
