@@ -19,19 +19,34 @@
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="Typo: one page you keep writing on.">
   <meta name="twitter:card" content="summary_large_image">
+<script>
+  // Before the first paint, as the app does it, so a reader who chose a theme
+  // never sees the other one flash in while the page loads.
+  (function () {
+    var root = document.documentElement;
+    try {
+      var saved = localStorage.getItem("typo-theme");
+      if (saved === "light" || saved === "dark") root.setAttribute("data-theme", saved);
+    } catch (e) {}
+    var platform = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "";
+    if (/^win/i.test(platform)) root.setAttribute("data-platform", "windows");
+  })();
+</script>
 <style>
   /* The app's own faces, bundled beside the page for the same reason the app
      bundles them: the page should look the same on a machine that has never
-     seen the font. Only the two weights the page asks for. */
+     seen the font. Only the two weights the page asks for. They are the edited
+     files, not Naver's: the originals ask Windows for aliased text at body
+     sizes, and Chrome there obeys. */
   @font-face {
-    font-family: MaruBuri;
-    src: url("fonts/MaruBuri-Regular.woff2") format("woff2");
+    font-family: TypoBuri;
+    src: url("fonts/TypoBuri-Regular.woff2") format("woff2");
     font-weight: 400;
     font-display: swap;
   }
   @font-face {
-    font-family: MaruBuri;
-    src: url("fonts/MaruBuri-Bold.woff2") format("woff2");
+    font-family: TypoBuri;
+    src: url("fonts/TypoBuri-Bold.woff2") format("woff2");
     font-weight: 700;
     font-display: swap;
   }
@@ -84,11 +99,15 @@
     margin: 0;
     background: var(--bg);
     color: var(--text);
-    font-family: MaruBuri, "Apple SD Gothic Neo", Georgia, serif;
+    font-family: TypoBuri, "Apple SD Gothic Neo", Georgia, serif;
     font-size: 17px;
     line-height: 1.65;
     -webkit-font-smoothing: antialiased;
   }
+  /* As in the app: DirectWrite draws this face lighter and less even than
+     macOS does, and a tenth of a pixel of stroke evens it out. On macOS the
+     same stroke reads as bold, so it stays on Windows. */
+  :root[data-platform="windows"] body { -webkit-text-stroke: 0.1px; }
   ::selection { background: var(--selection); }
   a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: 0.18em; }
   a:focus-visible, button:focus-visible { outline: 2px solid var(--text); outline-offset: 2px; }
@@ -115,6 +134,7 @@
     font-weight: 700;
     font-size: 1.05rem;
     letter-spacing: 0.01em;
+    text-decoration: none;
   }
   .wordmark svg { width: 22px; height: 22px; }
   .header-links {
@@ -125,8 +145,9 @@
   }
   .header-links a { text-decoration: none; }
   .header-links a:hover { color: var(--text); }
-  /* One button that cycles, as in the app: the label names where the next
-     press goes, since a cycle can't be read without stepping into it. */
+  /* One button that cycles, as in the app: it shows the theme in force, and
+     its tooltip names where the next press goes, since a cycle can't be read
+     without stepping into it. */
   .theme {
     font: inherit;
     color: inherit;
@@ -474,7 +495,7 @@
       <a href="#file">The file</a>
       <a href="#name">The name</a>
       <a href="#download">Download</a>
-      <button class="theme" id="theme" type="button" aria-label="Switch theme">Light</button>
+      <button class="theme" id="theme" type="button" aria-label="Theme: Auto — switch to Light" title="Theme: Auto — switch to Light">Auto</button>
     </nav>
   </header>
 
@@ -535,7 +556,7 @@
       </div>
       <div>
         <dt>Paper and ink</dt>
-        <dd>Two themes, light and dark, with no accent colour in either. What is active is <strong>darker or heavier, never bluer</strong>. Set in MaruBuri, a serif drawn for reading.</dd>
+        <dd>Two themes, light and dark, with no accent colour in either. What is active is <strong>darker or heavier, never bluer</strong>. Set in Naver's MaruBuri, a serif drawn for reading.</dd>
       </div>
     </dl>
   </section>
@@ -646,7 +667,7 @@ first time since the move.
 <script>
   (function () {
     var order = ["auto", "light", "dark"];
-    var next = { auto: "Light", light: "Dark", dark: "Auto" };
+    var name = { auto: "Auto", light: "Light", dark: "Dark" };
     var root = document.documentElement;
     var button = document.getElementById("theme");
     var current = "auto";
@@ -656,7 +677,11 @@ first time since the move.
     function apply() {
       if (current === "auto") root.removeAttribute("data-theme");
       else root.setAttribute("data-theme", current);
-      button.textContent = next[current];
+      var next = order[(order.indexOf(current) + 1) % order.length];
+      var label = "Theme: " + name[current] + " — switch to " + name[next];
+      button.textContent = name[current];
+      button.setAttribute("aria-label", label);
+      button.title = label;
     }
     button.addEventListener("click", function () {
       current = order[(order.indexOf(current) + 1) % order.length];

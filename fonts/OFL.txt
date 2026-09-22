@@ -1,7 +1,9 @@
 Copyright (c) NAVER Corp., NAVER Cultural Foundation Corp.,
 with Reserved Font Name MaruBuri.
 
-The files in this folder are unmodified.
+The files in this folder are a Modified Version and are named TypoBuri:
+their gasp table is rewritten so Windows draws them smoothed.
+
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 
