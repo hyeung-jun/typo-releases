@@ -483,6 +483,12 @@
   footer a:hover { text-decoration: underline; }
 
   @media (max-width: 640px) {
+    /* Six links and the theme button do not fit beside the wordmark on a
+       phone, so they drop to their own line and wrap between words, never
+       inside one. */
+    header { flex-wrap: wrap; }
+    .header-links { flex-wrap: wrap; gap: 0.3rem 1.1rem; }
+    .header-links a, .theme { white-space: nowrap; }
     .window { grid-template-columns: 1fr; min-height: 0; }
     .sidebar { border-right: 0; border-bottom: 1px solid var(--border-strong); padding-top: 0.8rem; }
     .sidebar-foot { display: none; }
@@ -514,6 +520,8 @@
       <a href="#file">The file</a>
       <a href="#name">The name</a>
       <a href="#download">Download</a>
+      <a href="#sync">Sync</a>
+      <a href="#faq">FAQ</a>
       <button class="theme" id="theme" type="button" aria-label="Theme: Auto — switch to Light" title="Theme: Auto — switch to Light">Auto</button>
     </nav>
   </header>
@@ -672,7 +680,7 @@ first time since the move.
     </div>
     <ol class="steps" style="margin-top:1.6rem">
       <li><span>On macOS, open the .dmg and drag <strong>Typo</strong> into Applications. On Windows, run the .msi.</span></li>
-      <li><span>Launch it and pick a folder. An empty one is fine, and so is a folder that already holds markdown.</span></li>
+      <li><span>Launch it and pick a folder, ideally an empty one. Other files already in it stay where they are, but Typo does not list them.</span></li>
       <li><span>That is all it takes to write. To keep the notes on more than one computer, <a href="#sync">set up sync</a>.</span></li>
     </ol>
   </section>
