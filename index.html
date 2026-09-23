@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Typo</title>
+  <title>Typo — a plain-markdown notes app synced with git</title>
   <meta name="description" content="A notes app for macOS and Windows. One continuous canvas per note, saved as plain markdown in a folder you choose, synced by git.">
   <link rel="icon" href="typo.svg">
   <link rel="canonical" href="https://hyeung-jun.github.io/typo-releases/">
@@ -19,6 +19,25 @@
   <meta property="og:image:height" content="630">
   <meta property="og:image:alt" content="Typo: one page you keep writing on.">
   <meta name="twitter:card" content="summary_large_image">
+  <!-- "Typo" alone is a common word, so search engines and AI answer engines
+       are told outright that this page is about a piece of software. No
+       version number: it would be one more place to bump on every release. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Typo",
+    "alternateName": "Typo notes app",
+    "description": "A desktop notes app for macOS and Windows. Each note is one continuous canvas, saved as a plain markdown file in a folder you choose and synced by that folder being a git repository.",
+    "applicationCategory": "UtilitiesApplication",
+    "operatingSystem": "macOS 13 or later (Apple silicon), Windows 10 or later",
+    "url": "https://hyeung-jun.github.io/typo-releases/",
+    "downloadUrl": "https://github.com/hyeung-jun/typo-releases/releases/latest",
+    "image": "https://hyeung-jun.github.io/typo-releases/og.png",
+    "isAccessibleForFree": true,
+    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+  }
+  </script>
 <script>
   // Before the first paint, as the app does it, so a reader who chose a theme
   // never sees the other one flash in while the page loads.
@@ -501,7 +520,7 @@
 
   <div class="hero">
     <h1>One page you keep writing on.</h1>
-    <p>A notes app for macOS and Windows with no folders, no databases and no account. Each note is one continuous canvas, saved as a markdown file in a folder you choose, and synced by that folder being a git repo.</p>
+    <p>Typo is a notes app for macOS and Windows with no folders, no databases and no account. Each note is one continuous canvas, saved as a markdown file in a folder you choose, and synced by that folder being a git repo.</p>
     <div class="hero-actions">
       <a class="btn" href="https://github.com/hyeung-jun/typo-releases/releases/latest">Download for macOS</a>
       <a class="btn btn-quiet" href="https://github.com/hyeung-jun/typo-releases/releases/latest">Download for Windows</a>
@@ -673,6 +692,37 @@ first time since the move.
     <div class="gatekeeper">
       <p>If Typo says <strong>this machine has no credentials for the remote</strong>, step 3 has not been done on this computer yet. If it says <strong>there is no repo at that address</strong>, check the address, and that you signed in with the account that owns the repository. Already use git with an SSH key? A <code>git@github.com:you/notes.git</code> address works too, and steps 2 and 3 can be skipped.</p>
     </div>
+  </section>
+
+  <section id="faq">
+    <p class="eyebrow">Questions</p>
+    <h2>Before you download.</h2>
+    <dl class="principles">
+      <div>
+        <dt>Is Typo free?</dt>
+        <dd>Yes. There is no account, no subscription and no server of ours. The installers are on <a href="https://github.com/hyeung-jun/typo-releases/releases">GitHub Releases</a>. The source code is not public for now.</dd>
+      </div>
+      <div>
+        <dt>How is it different from Obsidian?</dt>
+        <dd>Both keep notes as markdown files in a folder you own. Typo does less on purpose: <strong>no plugins, no nested folders, no graph of links</strong>. Each note is one canvas, and sync is built in, running on a git repository of your own.</dd>
+      </div>
+      <div>
+        <dt>Can it open the markdown I already have?</dt>
+        <dd>Not yet. Typo lists only the notes it made, whose files are named by a UUID. <strong>Other files in the folder are left alone</strong>, so a README or an existing set of notes can share the repository without being touched.</dd>
+      </div>
+      <div>
+        <dt>Does it work offline?</dt>
+        <dd>Yes. Notes are files on your disk, so <strong>writing and saving never need a network</strong>. Only sync does.</dd>
+      </div>
+      <div>
+        <dt>Do I need GitHub?</dt>
+        <dd>Only for sync, and not even then: <strong>any git remote you can push to works</strong>. The guide above uses a private GitHub repository because it is the shortest path. Without a remote, Typo is a local notes app.</dd>
+      </div>
+      <div>
+        <dt>Which systems does it run on?</dt>
+        <dd>macOS 13 or later on Apple silicon, and Windows 10 or later. There is no Linux, iPhone or Android version.</dd>
+      </div>
+    </dl>
   </section>
 
   <footer>

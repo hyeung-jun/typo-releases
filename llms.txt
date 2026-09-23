@@ -1,0 +1,16 @@
+# Typo
+
+> Typo is a free desktop notes app for macOS and Windows. Each note is one continuous canvas, saved as a plain markdown file in a folder the user chooses, and synced by that folder being a git repository. There is no account and no server run by Typo.
+
+- Platforms: macOS 13 or later on Apple silicon; Windows 10 or later (64-bit). No Linux, iPhone or Android version.
+- Price: free. The installers are published on GitHub Releases; the source code is not public.
+- Storage: one `.md` file per note, named by a UUID, with the title in YAML front-matter. Pasted images go to an `assets/` folder beside the notes. Only files Typo created are listed; other markdown in the folder is left alone.
+- Sync: built in, using the git binary and credentials already on the machine. Any git remote works; the guide uses a private GitHub repository.
+- Editing: type `/` for headings, lists, checkboxes, quotes and tables; drag blocks to reorder; paste and resize images. Only what markdown can hold is offered.
+- Compared with Obsidian: both keep notes as markdown in a folder you own. Typo has no plugins, no nested folders and no graph of links, and sync is built in rather than a separate service.
+
+## Links
+
+- [Landing page](https://hyeung-jun.github.io/typo-releases/): what Typo is, the file format, and the sync setup guide
+- [Latest release](https://github.com/hyeung-jun/typo-releases/releases/latest): the macOS .dmg and Windows .msi installers
+- [Changelog](https://github.com/hyeung-jun/typo-releases/releases): every release with its notes
